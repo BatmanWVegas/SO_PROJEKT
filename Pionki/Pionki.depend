@@ -1,8 +1,8 @@
 # depslib dependency file v1.0
-1497556137 source:/home/filip/Pulpit/Pionki/main.cpp
+1497562967 source:/home/filip/Pulpit/Pionki/main.cpp
 	"header.h"
 
-1497555447 /home/filip/Pulpit/Pionki/header.h
+1497562243 /home/filip/Pulpit/Pionki/header.h
 	<iostream>
 	<stdlib.h>
 	<queue>

@@ -27,7 +27,6 @@ Watki:
 using namespace std;
 //MUTEX
     mutex mx;
-    mutex macierz;
 
 //Watki:
     void Producent(int ile);
@@ -37,22 +36,29 @@ using namespace std;
 //Zasoby:
     queue <int> Kolejka1;
     queue <int> Kolejka2;
-    int MACIERZ[M][N];
+    volatile char MACIERZ[M][N];
     bool run=true;
 
 int main()
 {
     srand(time(NULL));
-    initscr();
+
+        for(int i=0; i<M ;i++)
+        {
+            for(int j=0; j<N; j++)
+            {
+                MACIERZ[i][j] = '-';
+            }
+        }
 
     thread TProducenic(Producent, 20);
-    TProducenic.join();
-
     thread TPrzetwarzacze = thread(Przetwarzacz, 20);
-    TPrzetwarzacze.join();
-
     thread TNcurses = thread(Ncurses);
+
+    TPrzetwarzacze.join();
+    TProducenic.join();
     TNcurses.join();
+
 
     return 0;
 }
@@ -60,92 +66,62 @@ int main()
 
 void Producent(int ile)
 {
-    do
-    {
-
-        //cout << "PRODUCENT"<<endl;
-        bool stop = false;
+do{
         int X;
         int Y;
-        //Losowanie X i Y
-        do{
+
+        X =(rand() % M);
+        Y =(rand() % N);
 
 
-            X =(rand() % M);
-            Y =(rand() % N);
 
-            macierz.lock();
-                if(MACIERZ[X][Y]==0)
-                    {
-                        stop = true;
-                    }
-            macierz.unlock();
-
-        }while(stop == false);
-
-        //cout << "Wylosowanie X: "<<X<<endl;
-        //cout << "Wylosowanie Y: "<< Y<<endl;
-
-        //Dodanie lokalizacji do kolejek
         mx.lock();
-            Kolejka1.push(X);
-            Kolejka2.push(Y);
+        Kolejka1.push(X);
+        Kolejka2.push(Y);
         mx.unlock();
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        ile --;
+}while(ile);
 
-        ile--;
-        //std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    }while(ile);
+
 
 }
 
 void Przetwarzacz(int ile)
 {
+
     do
     {
-        int X;
-        int Y;
 
-        //cout << "Przetwarzacz: sprawdz kolejke:"<<endl;
-        mx.lock();
-        if(Kolejka1.empty() && Kolejka2.empty())
+            if(Kolejka1.empty() && Kolejka2.empty())
             {
-                //cout << "Kolejka jest pusta." << endl;
+                continue;
             }
-        else
+            else
             {
-                X = Kolejka1.front();
-                Y = Kolejka2.front();
+
+                MACIERZ[2][2] = 'X';
+                for(int i=0; i<M ;i++)
+                {
+                    for(int j=0; j<N; j++)
+                    {
+                       if(MACIERZ[i][j]== 'X')
+                       {
+                            MACIERZ[i+1][j]== '-';
+                       }
+                    }
+                }
+
+                mx.lock();
+                MACIERZ[Kolejka1.front()][Kolejka2.front()] = 'X';
                 Kolejka1.pop();
                 Kolejka2.pop();
-                //cout << "POBRANO Z KOLEJKI X: "<<X<<endl;
-                //cout << "POBRANO Z KOLEJKI Y: "<< Y<<endl;
+                mx.unlock();
             }
-        mx.unlock();
 
-        macierz.lock();
-        MACIERZ[X][Y] = 1;
-        for(int i=0; i<M; i++)
-        {
-            for(int j=0; j<N;j++)
-            {
-                if(MACIERZ[i][j] == 1 &&
-                   MACIERZ[i][j] != MACIERZ[X][Y] &&
-                   MACIERZ[i+1][j] ==0)
-                {
-                    MACIERZ[i+1][j] = MACIERZ[i][j];
-                    MACIERZ[i][j] = 0;
-                }
-                else if(MACIERZ[i][j] ==1 &&
-                        MACIERZ[i][j] != MACIERZ[X][Y] &&
-                        MACIERZ[i-1][j] ==0)
-                {
-                    MACIERZ[i-1][j] = MACIERZ[i][j];
-                    MACIERZ[i][j] =0;
-                }
-            }
-        }
-        macierz.unlock();
-        //std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));
         ile--;
     }while(ile);
 
@@ -156,31 +132,26 @@ void Przetwarzacz(int ile)
 
 void Ncurses()
 {
+    initscr();
+for (int i = 0; i < 10; i++)
+{
 
-
-   do
-    {   //M/N
-
-        clear();
-        macierz.lock();
+    refresh();
+    mx.lock();
         for(int i=0; i<M ;i++)
         {
             for(int j=0; j<N; j++)
             {
-                if(MACIERZ[i][j]== 1)
-                {
-                    mvprintw( i+5, j+30, "X" );
-                }
-                else
-                {
-                    mvprintw( i+5, j+30, "O" );
-                }
+                    move(i,j);
+                    printw("%c", MACIERZ[i][j]);
+
             }
         }
-        macierz.unlock();
-        refresh();
+    mx.unlock();
+
         std::this_thread::sleep_for(std::chrono::seconds(1));
-    }while(run);
+
+}
     getch();
     endwin();                  // zakończenie tryby curses
 }

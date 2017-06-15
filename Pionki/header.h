@@ -7,6 +7,6 @@
 #include <ctime>
 #include <ncurses.h>
 #include <string.h>
-#define M 15
-#define N 15
+#define M 20
+#define N 30
 
