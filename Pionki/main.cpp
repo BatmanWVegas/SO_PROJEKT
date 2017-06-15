@@ -27,99 +27,162 @@ Watki:
 using namespace std;
 //MUTEX
     mutex mx;
+    mutex macierz;
 
 //Watki:
-    void Producent();
-    void Przetwarzacz();
+    void Producent(int ile);
+    void Przetwarzacz(int ile);
     void Ncurses();
 
 //Zasoby:
     queue <int> Kolejka1;
     queue <int> Kolejka2;
     int MACIERZ[M][N];
-
+    bool run=true;
 
 int main()
 {
-    int MACIERZ[M][N];
-    vector <thread> V_Producenic;
-    vector <thread> V_Przetwarzacze;
-    vector <thread> V_Ncurses;
-    srand( time(NULL));
+    srand(time(NULL));
+    initscr();
 
-    cout << "Start watku 'Producent'"<<endl<<endl;
-    cout << "Start watku 'Przetwarzacz'"<<endl<<endl;
-    cout << "Start watku 'NCurses'"<<endl<<endl;
+    thread TProducenic(Producent, 20);
+    TProducenic.join();
 
-    for(int i=0; i<10; i++)
-    {
-        V_Producenic.push_back(thread(Producent));
-        V_Przetwarzacze.push_back(thread(Przetwarzacz));
-        V_Ncurses.push_back(thread(Ncurses));
+    thread TPrzetwarzacze = thread(Przetwarzacz, 20);
+    TPrzetwarzacze.join();
 
-    }
-
-    for (auto& thread : V_Producenic)
-    {
-        thread.join();
-    }
-    for (auto& thread : V_Przetwarzacze)
-    {
-        thread.join();
-    }
-    for (auto& thread : V_Ncurses)
-    {
-        thread.join();
-    }
-    cout << "done!\n";
+    thread TNcurses = thread(Ncurses);
+    TNcurses.join();
 
     return 0;
 }
 
 
-void Producent()
+void Producent(int ile)
 {
-    cout << "PRODUCENT"<<endl;
+    do
+    {
 
-    //Losowanie X i Y
-    int X =(rand() % M);
-    int Y =(rand() % N);
+        //cout << "PRODUCENT"<<endl;
+        bool stop = false;
+        int X;
+        int Y;
+        //Losowanie X i Y
+        do{
 
-    cout << "Wylosowanie X: "<<X<<endl;
-    cout << "Wylosowanie Y: "<< Y<<endl;
 
-    //Dodanie lokalizacji do kolejek
-    mx.lock();
-    Kolejka1.push(X);
-    Kolejka2.push(Y);
-    mx.unlock();
+            X =(rand() % M);
+            Y =(rand() % N);
+
+            macierz.lock();
+                if(MACIERZ[X][Y]==0)
+                    {
+                        stop = true;
+                    }
+            macierz.unlock();
+
+        }while(stop == false);
+
+        //cout << "Wylosowanie X: "<<X<<endl;
+        //cout << "Wylosowanie Y: "<< Y<<endl;
+
+        //Dodanie lokalizacji do kolejek
+        mx.lock();
+            Kolejka1.push(X);
+            Kolejka2.push(Y);
+        mx.unlock();
+
+        ile--;
+        //std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }while(ile);
 
 }
 
-void Przetwarzacz()
+void Przetwarzacz(int ile)
 {
-    cout << "Przetwarzacz: sprawdz kolejke:"<<endl;
-    mx.lock();
-    if(Kolejka1.empty() && Kolejka2.empty())
+    do
     {
-        cout << "Kolejka jest pusta." << endl;
-    }
-    else
-    {
-        int X = Kolejka1.front();
-        int Y = Kolejka2.front();
-        Kolejka1.pop();
-        Kolejka2.pop();
-        cout << "Wylosowanie X: "<<X<<endl;
-        cout << "Wylosowanie Y: "<< Y<<endl;
-    }
-    mx.unlock();
+        int X;
+        int Y;
+
+        //cout << "Przetwarzacz: sprawdz kolejke:"<<endl;
+        mx.lock();
+        if(Kolejka1.empty() && Kolejka2.empty())
+            {
+                //cout << "Kolejka jest pusta." << endl;
+            }
+        else
+            {
+                X = Kolejka1.front();
+                Y = Kolejka2.front();
+                Kolejka1.pop();
+                Kolejka2.pop();
+                //cout << "POBRANO Z KOLEJKI X: "<<X<<endl;
+                //cout << "POBRANO Z KOLEJKI Y: "<< Y<<endl;
+            }
+        mx.unlock();
+
+        macierz.lock();
+        MACIERZ[X][Y] = 1;
+        for(int i=0; i<M; i++)
+        {
+            for(int j=0; j<N;j++)
+            {
+                if(MACIERZ[i][j] == 1 &&
+                   MACIERZ[i][j] != MACIERZ[X][Y] &&
+                   MACIERZ[i+1][j] ==0)
+                {
+                    MACIERZ[i+1][j] = MACIERZ[i][j];
+                    MACIERZ[i][j] = 0;
+                }
+                else if(MACIERZ[i][j] ==1 &&
+                        MACIERZ[i][j] != MACIERZ[X][Y] &&
+                        MACIERZ[i-1][j] ==0)
+                {
+                    MACIERZ[i-1][j] = MACIERZ[i][j];
+                    MACIERZ[i][j] =0;
+                }
+            }
+        }
+        macierz.unlock();
+        //std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        ile--;
+    }while(ile);
+
+    run=false;
+
+
 }
 
 void Ncurses()
 {
-    cout << "NCURSES"<<endl;
-    this_thread::sleep_for(chrono::seconds(1));
+
+
+   do
+    {   //M/N
+
+        clear();
+        macierz.lock();
+        for(int i=0; i<M ;i++)
+        {
+            for(int j=0; j<N; j++)
+            {
+                if(MACIERZ[i][j]== 1)
+                {
+                    mvprintw( i+5, j+30, "X" );
+                }
+                else
+                {
+                    mvprintw( i+5, j+30, "O" );
+                }
+            }
+        }
+        macierz.unlock();
+        refresh();
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }while(run);
+    getch();
+    endwin();                  // zakończenie tryby curses
 }
 
 

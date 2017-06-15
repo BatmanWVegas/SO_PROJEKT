@@ -5,6 +5,8 @@
 #include <mutex>
 #include <chrono>
 #include <ctime>
+#include <ncurses.h>
+#include <string.h>
+#define M 15
+#define N 15
 
-#define M 10
-#define N 10
