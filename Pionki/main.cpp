@@ -51,8 +51,8 @@ int main()
             }
         }
 
-    thread TProducenic(Producent, 20);
-    thread TPrzetwarzacze = thread(Przetwarzacz, 20);
+    thread TProducenic(Producent, 50);
+    thread TPrzetwarzacze = thread(Przetwarzacz, 50);
     thread TNcurses = thread(Ncurses);
 
     TPrzetwarzacze.join();
@@ -100,15 +100,19 @@ void Przetwarzacz(int ile)
             else
             {
 
-                MACIERZ[2][2] = 'X';
                 for(int i=0; i<M ;i++)
                 {
                     for(int j=0; j<N; j++)
                     {
-                       if(MACIERZ[i][j]== 'X')
-                       {
-                            MACIERZ[i+1][j]== '-';
-                       }
+
+                      if(MACIERZ[i][j] == 'X')
+                      {
+                          mx.lock();
+                          MACIERZ[i][j-1] = 'X';
+                          MACIERZ[i][j] = '-';
+                          mx.unlock();
+                      }
+
                     }
                 }
 
@@ -133,11 +137,10 @@ void Przetwarzacz(int ile)
 void Ncurses()
 {
     initscr();
-for (int i = 0; i < 10; i++)
+for (;;)
 {
 
     refresh();
-    mx.lock();
         for(int i=0; i<M ;i++)
         {
             for(int j=0; j<N; j++)
@@ -147,8 +150,6 @@ for (int i = 0; i < 10; i++)
 
             }
         }
-    mx.unlock();
-
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
 }
