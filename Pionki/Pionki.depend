@@ -1,0 +1,13 @@
+# depslib dependency file v1.0
+1497540792 source:/home/filip/Pulpit/Pionki/main.cpp
+	"header.h"
+
+1497538821 /home/filip/Pulpit/Pionki/header.h
+	<iostream>
+	<stdlib.h>
+	<queue>
+	<thread>
+	<mutex>
+	<chrono>
+	<ctime>
+
