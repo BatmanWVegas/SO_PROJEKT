@@ -1,2 +1,2 @@
 # SO_PROJEKT
-Repozytorium stworzone na potrzby zajęć z Systemow Operacyjnych
+Repozytorium stworzone na potrzeby zajęć z Systemow Operacyjnych
